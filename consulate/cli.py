@@ -284,12 +284,16 @@ def kv_mirror(consul, args):
     """Copy a Consul KV database to a directory """
     records = consul.kv.records(args.prefix)
     for k, f, v in records:
-        print k
-        print f
+        if not v:
+            continue
+        key_basedir = os.path.join(args.path, os.path.dirname(k))
+        if not os.path.exists(key_basedir):
+            os.makedirs(key_basedir)
         try:
-            print v[:20]
+	    with open(os.path.join(args.path, k), 'wb') as f:
+               f.write(v.encode('utf8'))
         except:
-            print v
+            print k, type(v)
 
 
 def kv_backup(consul, args):
