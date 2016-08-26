@@ -54,8 +54,11 @@ ACL_PARSERS = [
     ]
 
 KV_PARSERS = [
-    ('mirror', 'Mirror to a directory', [
+    ('mirror', 'Mirror consul kv to a directory', [
         [['path'], {'help': 'Path to mirror to'}],
+        [['prefix'], {'help': 'Record prefix', 'default': None, 'nargs': '?'}]]),
+    ('resilver', 'Mirror a directory to consul', [
+        [['path'], {'help': 'Path to mirror from'}],
         [['prefix'], {'help': 'Record prefix', 'default': None, 'nargs': '?'}]]),
     ('backup', 'Backup to stdout or a JSON file', [
         [['key'], {'help': 'The key to use as target to backup a specific key or folder.', 
@@ -290,11 +293,21 @@ def kv_mirror(consul, args):
         if not os.path.exists(key_basedir):
             os.makedirs(key_basedir)
         try:
-	    with open(os.path.join(args.path, k), 'wb') as f:
+            with open(os.path.join(args.path, k), 'wb') as f:
                f.write(v.encode('utf8'))
         except:
             print k, type(v)
 
+
+def kv_resilver(consul, args):
+    walker = os.walk(args.path)
+    for keybase, _, keynames in walker:
+        # Strip the leading pathname off.
+        _, _, keydir = keybase.partition(args.path)
+        for keyname in keynames:
+            with open(os.path.join(keybase, keyname)) as f:
+                v = f.read()
+            consul.kv[keydir + '/' + keyname] = v
 
 def kv_backup(consul, args):
     """Backup the Consul KV database
@@ -487,6 +500,7 @@ def kv_set(consul, args):
 # Mapping dict to simplify the code in main()
 KV_ACTIONS = {
     'mirror': kv_mirror,
+    'resilver': kv_resilver,
     'backup': kv_backup,
     'del': kv_delete,
     'get': kv_get,
