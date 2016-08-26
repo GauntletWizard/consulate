@@ -54,6 +54,9 @@ ACL_PARSERS = [
     ]
 
 KV_PARSERS = [
+    ('mirror', 'Mirror to a directory', [
+        [['path'], {'help': 'Path to mirror to'}],
+        [['prefix'], {'help': 'Record prefix', 'default': None, 'nargs': '?'}]]),
     ('backup', 'Backup to stdout or a JSON file', [
         [['key'], {'help': 'The key to use as target to backup a specific key or folder.', 
                    'nargs':'?'}],
@@ -277,6 +280,18 @@ ACL_ACTIONS = {
 }
 
 
+def kv_mirror(consul, args):
+    """Copy a Consul KV database to a directory """
+    records = consul.kv.records(args.prefix)
+    for k, f, v in records:
+        print k
+        print f
+        try:
+            print v[:20]
+        except:
+            print v
+
+
 def kv_backup(consul, args):
     """Backup the Consul KV database
 
@@ -467,6 +482,7 @@ def kv_set(consul, args):
 
 # Mapping dict to simplify the code in main()
 KV_ACTIONS = {
+    'mirror': kv_mirror,
     'backup': kv_backup,
     'del': kv_delete,
     'get': kv_get,
